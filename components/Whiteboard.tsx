@@ -21,9 +21,11 @@ interface WhiteboardCanvasProps {
   color: string;
   lineWidth: number;
   imageSrc: string | null;
-  lines: LineData[] | undefined; // Updated to allow undefined
+  lines: LineData[];
   setLines: React.Dispatch<React.SetStateAction<LineData[]>>;
-  socket: Socket;
+  socket: Socket | null;
+  roomId: string;
+  exportImage: () => void; // <-- Add exportImage to the props
 }
 
 const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
@@ -31,15 +33,15 @@ const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
   color,
   lineWidth,
   imageSrc,
-  lines = [], // Provide a default empty array
+  lines,
   setLines,
   socket,
+  roomId,
+  exportImage, // <-- Destructure exportImage here
 }) => {
   const [currentLine, setCurrentLine] = useState<Point[]>([]);
   const stageRef = useRef<Konva.Stage | null>(null);
   const isDrawing = useRef(false);
-
-  // Load the image if an image source is provided
   const [loadedImage] = useImage(imageSrc || "");
 
   const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
@@ -62,19 +64,36 @@ const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
   const handleMouseUp = () => {
     if (currentLine.length > 0) {
       setLines((prev) => [...prev, { points: currentLine }]);
-      socket.emit("drawing", { line: { points: currentLine } });
+      socket?.emit("drawing", { roomId, line: { points: currentLine } });
       setCurrentLine([]);
     }
     isDrawing.current = false;
   };
 
   useEffect(() => {
+    if (!socket) return;
+
     socket.on("drawing", (data: { line: LineData }) => {
       setLines((prev) => [...prev, data.line]);
     });
 
+    socket.on("addImage", (image: string) => {
+      setCurrentLine([]);
+    });
+
+    socket.on("undo", (updatedLines: LineData[]) => {
+      setLines(updatedLines);
+    });
+
+    socket.on("redo", (updatedLines: LineData[]) => {
+      setLines(updatedLines);
+    });
+
     return () => {
       socket.off("drawing");
+      socket.off("addImage");
+      socket.off("undo");
+      socket.off("redo");
     };
   }, [socket, setLines]);
 
@@ -93,9 +112,7 @@ const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
           <Line
             key={i}
             points={line.points.flatMap((p) => [p.x, p.y])}
-            stroke={
-              line.points[0].tool === "pen" ? line.points[0].color : "white"
-            }
+            stroke={line.points[0].color}
             strokeWidth={line.points[0].lineWidth}
             lineCap="round"
             globalCompositeOperation={
@@ -108,9 +125,7 @@ const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
         {currentLine.length > 0 && (
           <Line
             points={currentLine.flatMap((p) => [p.x, p.y])}
-            stroke={
-              currentLine[0].tool === "pen" ? currentLine[0].color : "white"
-            }
+            stroke={currentLine[0].color}
             strokeWidth={currentLine[0].lineWidth}
             lineCap="round"
             globalCompositeOperation={

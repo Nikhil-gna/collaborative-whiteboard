@@ -1,16 +1,37 @@
-import dynamic from "next/dynamic";
-import React from "react";
+import { useState } from "react";
+import { useRouter } from "next/router";
 
-// Dynamically import Whiteboard to prevent SSR
-const Whiteboard = dynamic(() => import("../components/Main"), {
-  ssr: false,
-});
+const Home = () => {
+  const [roomId, setRoomId] = useState("");
+  const router = useRouter();
 
-const Home: React.FC = () => {
+  const createRoom = () => {
+    const id = Math.random().toString(36).substr(2, 9);
+    router.push(`/${id}`);
+  };
+
+  const joinRoom = () => {
+    if (roomId.trim()) {
+      router.push(`/${roomId}`);
+    }
+  };
+
   return (
-    <div>
-      <h1>Real-Time Collaborative Whiteboard</h1>
-      <Whiteboard />
+    <div className="container text-center">
+      <h1>Welcome to DigiBoard</h1>
+      <button className="btn btn-primary" onClick={createRoom}>
+        Start Whiteboard
+      </button>
+      <hr />
+      <input
+        type="text"
+        placeholder="Enter Room ID"
+        value={roomId}
+        onChange={(e) => setRoomId(e.target.value)}
+      />
+      <button className="btn btn-secondary" onClick={joinRoom}>
+        Join Room
+      </button>
     </div>
   );
 };

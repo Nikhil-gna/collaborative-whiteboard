@@ -2,6 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  body {
+    @apply dark:bg-gray-800 bg-white;
+  }
+}
+
+body {
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.bg-light {
+  background-color: #e8f2fd;
+}
+
+.bg-dark {
+  background-color: #343a40;
+}
+
+.text-primary {
+  color: #007bff;
+}
+
+.text-light {
+  color: #ffffff;
+}
+
+.text-dark {
+  color: #000000;
+}
+
 .toolbar {
   display: flex;
   justify-content: space-between;
