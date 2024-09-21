@@ -15,6 +15,7 @@ const Main: React.FC<MainProps> = ({ roomId, socket }) => {
   const [lineWidth, setLineWidth] = useState(5);
   const [lines, setLines] = useState<any[]>([]);
   const [redoStack, setRedoStack] = useState<any[]>([]);
+  const [imageStack, setImageStack] = useState<(string | null)[]>([]);
   const [imageSrc, setImageSrc] = useState<string | null>(null);
 
   useEffect(() => {
@@ -30,16 +31,23 @@ const Main: React.FC<MainProps> = ({ roomId, socket }) => {
       setLines((prevLines) => [...prevLines, line]);
     });
 
-    socket.on("undo", ({ lines }) => {
+    socket.on("undo", ({ lines, image }) => {
       setLines(lines);
+      setImageSrc(image);
     });
 
-    socket.on("redo", ({ lines }) => {
+    socket.on("redo", ({ lines, image }) => {
       setLines(lines);
+      setImageSrc(image);
     });
 
     socket.on("addImage", ({ image }) => {
       setImageSrc(image);
+    });
+
+    socket.on("clearBoard", () => {
+      setLines([]);
+      setImageSrc(null); // Clear the image as well
     });
 
     return () => {
@@ -48,21 +56,42 @@ const Main: React.FC<MainProps> = ({ roomId, socket }) => {
       socket.off("undo");
       socket.off("redo");
       socket.off("addImage");
+      socket.off("clearBoard");
     };
   }, [socket]);
 
   const undo = () => {
-    const lastLine = lines.pop();
-    if (lastLine) setRedoStack([...redoStack, lastLine]);
-    setLines([...lines]);
-    socket?.emit("undo", { roomId, lines });
+    if (lines.length > 0 || imageSrc) {
+      const lastLine = lines.pop();
+      if (lastLine) setRedoStack([...redoStack, lastLine]);
+
+      const lastImage = imageSrc ? imageSrc : imageStack.pop();
+      if (lastImage) setImageStack([...imageStack, lastImage]);
+
+      setLines([...lines]);
+      setImageSrc(
+        imageStack.length > 0 ? imageStack[imageStack.length - 1] : null
+      );
+      socket?.emit("undo", {
+        roomId,
+        lines,
+        image: imageStack[imageStack.length - 1],
+      });
+    }
   };
 
   const redo = () => {
     const lastRedo = redoStack.pop();
-    if (lastRedo) setLines([...lines, lastRedo]);
-    setRedoStack([...redoStack]);
-    socket?.emit("redo", { roomId, lines });
+    const lastImageRedo = imageStack.pop();
+
+    if (lastRedo || lastImageRedo) {
+      if (lastRedo) setLines([...lines, lastRedo]);
+      if (lastImageRedo) setImageSrc(lastImageRedo);
+
+      setRedoStack([...redoStack]);
+      setImageStack([...imageStack]);
+      socket?.emit("redo", { roomId, lines, image: lastImageRedo });
+    }
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -71,10 +100,17 @@ const Main: React.FC<MainProps> = ({ roomId, socket }) => {
       const reader = new FileReader();
       reader.onload = () => {
         setImageSrc(reader.result as string);
+        setImageStack([...imageStack, reader.result as string]); // Push image to stack
         socket?.emit("addImage", { roomId, image: reader.result });
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const clearBoard = () => {
+    setLines([]);
+    setImageSrc(null);
+    socket?.emit("clearBoard", roomId);
   };
 
   const exportImage = () => {
@@ -111,6 +147,7 @@ const Main: React.FC<MainProps> = ({ roomId, socket }) => {
           handleImageUpload={handleImageUpload}
           undo={undo}
           redo={redo}
+          clearBoard={clearBoard}
           exportImage={exportImage}
         />
       </div>

@@ -35,17 +35,19 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("undo", ({ roomId, lines }) => {
+  socket.on("undo", ({ roomId, lines, image }) => {
     if (rooms[roomId]) {
       rooms[roomId].lines = lines;
-      io.to(roomId).emit("undo", { lines });
+      rooms[roomId].image = image;
+      io.to(roomId).emit("undo", { lines, image });
     }
   });
 
-  socket.on("redo", ({ roomId, lines }) => {
+  socket.on("redo", ({ roomId, lines, image }) => {
     if (rooms[roomId]) {
       rooms[roomId].lines = lines;
-      io.to(roomId).emit("redo", { lines });
+      rooms[roomId].image = image;
+      io.to(roomId).emit("redo", { lines, image });
     }
   });
 
@@ -53,6 +55,14 @@ io.on("connection", (socket) => {
     if (rooms[roomId]) {
       rooms[roomId].image = image;
       io.to(roomId).emit("addImage", { image });
+    }
+  });
+
+  socket.on("clearBoard", (roomId) => {
+    if (rooms[roomId]) {
+      rooms[roomId].lines = []; // Clear the lines in the room
+      rooms[roomId].image = null; // Clear the image
+      io.to(roomId).emit("clearBoard"); // Notify all clients in the room
     }
   });
 

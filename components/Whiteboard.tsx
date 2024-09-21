@@ -37,7 +37,7 @@ const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
   setLines,
   socket,
   roomId,
-  exportImage, // <-- Destructure exportImage here
+  exportImage,
 }) => {
   const [currentLine, setCurrentLine] = useState<Point[]>([]);
   const stageRef = useRef<Konva.Stage | null>(null);
@@ -89,11 +89,16 @@ const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
       setLines(updatedLines);
     });
 
+    socket.on("clearBoard", () => {
+      setLines([]); // Clear the board for all users
+    });
+
     return () => {
       socket.off("drawing");
       socket.off("addImage");
       socket.off("undo");
       socket.off("redo");
+      socket.off("clearBoard");
     };
   }, [socket, setLines]);
 

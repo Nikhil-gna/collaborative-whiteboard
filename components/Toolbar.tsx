@@ -15,7 +15,7 @@ import {
   FaDownload,
   FaUpload,
 } from "react-icons/fa";
-
+import { IoTrashBin } from "react-icons/io5";
 interface ToolbarProps {
   tool: string;
   setTool: (tool: string) => void;
@@ -27,6 +27,7 @@ interface ToolbarProps {
   undo: () => void;
   redo: () => void;
   exportImage: () => void;
+  clearBoard: () => void;
 }
 
 const Toolbar: React.FC<ToolbarProps> = ({
@@ -40,6 +41,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
   undo,
   redo,
   exportImage,
+  clearBoard,
 }) => {
   return (
     <div className="toolbar bg-gray-100 dark:bg-gray-900 border-b border-gray-300 dark:border-gray-700 transition-colors duration-300 rounded-pill shadow-lg py-1 mb-3">
@@ -114,7 +116,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
           </OverlayTrigger>
         </ButtonGroup>
 
-        <ButtonGroup>
+        <ButtonGroup className="me-2">
           <OverlayTrigger placement="top" overlay={<Tooltip>Export</Tooltip>}>
             <Button variant="outline-success" onClick={exportImage}>
               <FaDownload />
@@ -127,6 +129,17 @@ const Toolbar: React.FC<ToolbarProps> = ({
             >
               <FaUpload />
             </label>
+          </OverlayTrigger>
+        </ButtonGroup>
+
+        <ButtonGroup>
+          <OverlayTrigger
+            placement="top"
+            overlay={<Tooltip>Clear Board</Tooltip>}
+          >
+            <Button variant="outline-danger" onClick={clearBoard}>
+              <IoTrashBin />
+            </Button>
           </OverlayTrigger>
         </ButtonGroup>
       </div>
