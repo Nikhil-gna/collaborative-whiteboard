@@ -60,9 +60,20 @@ io.on("connection", (socket) => {
 
   socket.on("clearBoard", (roomId) => {
     if (rooms[roomId]) {
-      rooms[roomId].lines = []; // Clear the lines in the room
-      rooms[roomId].image = null; // Clear the image
-      io.to(roomId).emit("clearBoard"); // Notify all clients in the room
+      rooms[roomId].lines = [];
+      rooms[roomId].image = null;
+      io.to(roomId).emit("clearBoard");
+    }
+  });
+  socket.on("mouseMove", ({ roomId, x, y }) => {
+    const user = rooms[roomId].users.find((user) => user.id === socket.id);
+    if (user) {
+      io.to(roomId).emit("mouseUpdate", {
+        id: socket.id,
+        name: user.name,
+        x,
+        y,
+      });
     }
   });
 
@@ -73,7 +84,6 @@ io.on("connection", (socket) => {
       );
       io.to(roomId).emit("userLeft", rooms[roomId].users);
 
-      // If the room is empty, delete it
       if (rooms[roomId].users.length === 0) {
         delete rooms[roomId];
       }

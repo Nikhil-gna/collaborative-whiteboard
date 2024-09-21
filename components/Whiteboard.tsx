@@ -1,5 +1,12 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Stage, Layer, Line, Image as KonvaImage } from "react-konva";
+import {
+  Stage,
+  Layer,
+  Line,
+  Image as KonvaImage,
+  Circle,
+  Text,
+} from "react-konva";
 import useImage from "use-image";
 import { Socket } from "socket.io-client";
 import Konva from "konva";
@@ -10,6 +17,13 @@ interface Point {
   tool: string;
   color: string;
   lineWidth: number;
+}
+
+interface Cursor {
+  x: number;
+  y: number;
+  id: string;
+  name: string;
 }
 
 interface LineData {
@@ -25,7 +39,6 @@ interface WhiteboardCanvasProps {
   setLines: React.Dispatch<React.SetStateAction<LineData[]>>;
   socket: Socket | null;
   roomId: string;
-  exportImage: () => void; // <-- Add exportImage to the props
 }
 
 const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
@@ -37,12 +50,12 @@ const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
   setLines,
   socket,
   roomId,
-  exportImage,
 }) => {
   const [currentLine, setCurrentLine] = useState<Point[]>([]);
+  const [cursors, setCursors] = useState<Cursor[]>([]);
   const stageRef = useRef<Konva.Stage | null>(null);
   const isDrawing = useRef(false);
-  const [loadedImage] = useImage(imageSrc || "");
+  const [loadedImage, setLoadedImage] = useState<HTMLImageElement | null>(null);
 
   const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
     isDrawing.current = true;
@@ -53,9 +66,15 @@ const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
   };
 
   const handleMouseMove = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    if (!isDrawing.current) return;
     const stage = e.target.getStage();
     const point = stage?.getPointerPosition();
+
+    if (point && socket) {
+      socket.emit("mouseMove", { roomId, x: point.x, y: point.y });
+    }
+
+    if (!isDrawing.current) return;
+
     if (point) {
       setCurrentLine((prev) => [...prev, { ...point, tool, color, lineWidth }]);
     }
@@ -77,28 +96,59 @@ const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
       setLines((prev) => [...prev, data.line]);
     });
 
-    socket.on("addImage", (image: string) => {
-      setCurrentLine([]);
-    });
+    socket.on(
+      "undo",
+      ({ lines, image }: { lines: LineData[]; image: string | null }) => {
+        setLines(lines);
+        if (image) {
+          const img = new Image();
+          img.src = image;
+          img.onload = () => setLoadedImage(img);
+        } else {
+          setLoadedImage(null);
+        }
+      }
+    );
 
-    socket.on("undo", (updatedLines: LineData[]) => {
-      setLines(updatedLines);
-    });
+    socket.on(
+      "redo",
+      ({ lines, image }: { lines: LineData[]; image: string | null }) => {
+        setLines(lines);
+        if (image) {
+          const img = new Image();
+          img.src = image;
+          img.onload = () => setLoadedImage(img);
+        } else {
+          setLoadedImage(null);
+        }
+      }
+    );
 
-    socket.on("redo", (updatedLines: LineData[]) => {
-      setLines(updatedLines);
+    socket.on("addImage", ({ image }: { image: string }) => {
+      const img = new Image();
+      img.src = image;
+      img.onload = () => setLoadedImage(img);
     });
 
     socket.on("clearBoard", () => {
-      setLines([]); // Clear the board for all users
+      setLines([]);
+      setLoadedImage(null);
+    });
+
+    socket.on("mouseUpdate", (data: Cursor) => {
+      setCursors((prevCursors) => {
+        const updatedCursors = prevCursors.filter((c) => c.id !== data.id);
+        return [...updatedCursors, data];
+      });
     });
 
     return () => {
       socket.off("drawing");
-      socket.off("addImage");
       socket.off("undo");
       socket.off("redo");
+      socket.off("addImage");
       socket.off("clearBoard");
+      socket.off("mouseUpdate");
     };
   }, [socket, setLines]);
 
@@ -107,13 +157,13 @@ const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
       width={window.innerWidth}
       height={window.innerHeight}
       onMouseDown={handleMouseDown}
-      onMousemove={handleMouseMove}
-      onMouseup={handleMouseUp}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
       ref={stageRef}
     >
       <Layer>
         {loadedImage && <KonvaImage image={loadedImage} x={0} y={0} />}
-        {lines?.map((line, i) => (
+        {lines.map((line, i) => (
           <Line
             key={i}
             points={line.points.flatMap((p) => [p.x, p.y])}
@@ -140,6 +190,12 @@ const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
             }
           />
         )}
+        {cursors.map((cursor) => (
+          <React.Fragment key={cursor.id}>
+            <Circle x={cursor.x} y={cursor.y} radius={5} fill="red" />
+            <Text x={cursor.x + 10} y={cursor.y - 10} text={cursor.name} />
+          </React.Fragment>
+        ))}
       </Layer>
     </Stage>
   );

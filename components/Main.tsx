@@ -134,7 +134,7 @@ const Main: React.FC<MainProps> = ({ roomId, socket }) => {
         setLines={setLines}
         socket={socket}
         roomId={roomId}
-        exportImage={exportImage}
+        // exportImage={exportImage}
       />
       <div className="position-fixed bottom-0 start-50 translate-middle-x mb-3">
         <Toolbar

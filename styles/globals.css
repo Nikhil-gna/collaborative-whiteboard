@@ -9,6 +9,55 @@
 }
 
 body {
+  font-family: "Roboto", sans-serif;
+  background-color: #f8f8f8;
+  margin: 0;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.text-primary {
+  color: #2962ff !important;
+}
+
+/* Button Styling */
+.btn-primary {
+  background-color: #2962ff;
+  border-color: #2962ff;
+}
+
+.btn-primary:hover {
+  background-color: darken(#2962ff, 10%);
+  border-color: darken(#2962ff, 10%);
+}
+
+/* Input Field Styling */
+.input-lg {
+  padding: 15px;
+  border: 2px solid #ced4da;
+  border-radius: 5px;
+}
+
+.input-lg:focus {
+  border-color: #2962ff;
+  box-shadow: 0 0 0 0.2rem rgba(41, 98, 255, 0.25);
+}
+body {
   transition: background-color 0.3s, color 0.3s;
 }
 
