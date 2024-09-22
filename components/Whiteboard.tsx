@@ -7,6 +7,7 @@ import {
   Circle,
   Text,
 } from "react-konva";
+import { useTheme } from "next-themes";
 import useImage from "use-image";
 import { Socket } from "socket.io-client";
 import Konva from "konva";
@@ -151,7 +152,7 @@ const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
       socket.off("mouseUpdate");
     };
   }, [socket, setLines]);
-
+  const { theme } = useTheme();
   return (
     <Stage
       width={window.innerWidth}
@@ -193,7 +194,12 @@ const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
         {cursors.map((cursor) => (
           <React.Fragment key={cursor.id}>
             <Circle x={cursor.x} y={cursor.y} radius={5} fill="red" />
-            <Text x={cursor.x + 10} y={cursor.y - 10} text={cursor.name} />
+            <Text
+              x={cursor.x + 10}
+              y={cursor.y - 10}
+              fill={theme === "dark" ? "white" : "black"}
+              text={cursor.name}
+            />
           </React.Fragment>
         ))}
       </Layer>

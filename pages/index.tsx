@@ -2,18 +2,19 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 
 const Home = () => {
+  const [name, setName] = useState("");
   const [roomId, setRoomId] = useState("");
-  const [name, setName] = useState(""); // Add name state
+  const [isJoining, setIsJoining] = useState(false); // State to toggle between creating and joining a room
   const router = useRouter();
 
   const createRoom = () => {
     const id = Math.random().toString(36).substr(2, 9);
-    router.push(`/${id}?name=${name}`); // Pass name as query param
+    router.push(`/${id}?name=${name}`);
   };
 
   const joinRoom = () => {
     if (roomId.trim()) {
-      router.push(`/${roomId}?name=${name}`); // Pass name as query param
+      router.push(`/${roomId}?name=${name}`);
     }
   };
 
@@ -33,34 +34,52 @@ const Home = () => {
               className="form-control input-lg mb-3"
             />
           </div>
-          <div className="d-flex justify-content-center mb-4">
-            <button
-              className="btn btn-primary btn-lg mr-2"
-              onClick={createRoom}
-            >
-              Create Room
-            </button>
-          </div>
 
-          <hr className="my-4 bg-light" />
-
-          <div className="form-group">
-            <input
-              type="text"
-              placeholder="Enter Room ID"
-              value={roomId}
-              onChange={(e) => setRoomId(e.target.value)}
-              className="form-control input-lg"
-            />
-          </div>
-          <div className="d-flex justify-content-center mt-3">
-            <button
-              className="btn btn-outline-primary btn-lg"
-              onClick={joinRoom}
-            >
-              Join Room
-            </button>
-          </div>
+          {!isJoining ? (
+            <div className="d-flex justify-content-center">
+              <button
+                className="btn btn-primary btn-lg mr-2"
+                onClick={createRoom}
+                disabled={!name}
+              >
+                Create Room
+              </button>
+              <button
+                className="btn btn-outline-primary btn-lg"
+                onClick={() => setIsJoining(true)}
+                disabled={!name}
+              >
+                Join Room
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="form-group mt-4">
+                <input
+                  type="text"
+                  placeholder="Enter Room ID"
+                  value={roomId}
+                  onChange={(e) => setRoomId(e.target.value)}
+                  className="form-control input-lg"
+                />
+              </div>
+              <div className="d-flex justify-content-center mt-3">
+                <button
+                  className="btn btn-outline-primary btn-lg"
+                  onClick={joinRoom}
+                  disabled={!roomId}
+                >
+                  Join Room
+                </button>
+                <button
+                  className="btn btn-secondary btn-lg ml-2"
+                  onClick={() => setIsJoining(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
