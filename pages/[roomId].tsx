@@ -24,7 +24,9 @@ const Room: React.FC = () => {
   useEffect(() => {
     if (typeof roomId === "string" && typeof name === "string") {
       try {
-        socketRef.current = io("http://localhost:3001");
+        socketRef.current = io(
+          "https://collaborative-whiteboard-du8v.onrender.com"
+        );
         const socket = socketRef.current;
 
         socket.emit("joinRoom", { roomId, name });
