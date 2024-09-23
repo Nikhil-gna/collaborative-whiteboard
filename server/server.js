@@ -11,6 +11,11 @@ const io = new Server(server, {
   },
 });
 
+// Confirmation route
+app.get("/", (req, res) => {
+  res.send("Backend server is running and ready to accept connections!");
+});
+
 const rooms = {};
 
 io.on("connection", (socket) => {
@@ -65,6 +70,7 @@ io.on("connection", (socket) => {
       io.to(roomId).emit("clearBoard");
     }
   });
+
   socket.on("mouseMove", ({ roomId, x, y }) => {
     const user = rooms[roomId].users.find((user) => user.id === socket.id);
     if (user) {

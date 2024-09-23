@@ -3,6 +3,7 @@ import { Socket } from "socket.io-client";
 import WhiteboardCanvas from "./Whiteboard";
 import Toolbar from "./Toolbar";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { LineData } from "@/types/types";
 
 interface MainProps {
   roomId: string;
@@ -13,8 +14,8 @@ const Main: React.FC<MainProps> = ({ roomId, socket }) => {
   const [tool, setTool] = useState("pen");
   const [color, setColor] = useState("black");
   const [lineWidth, setLineWidth] = useState(5);
-  const [lines, setLines] = useState<any[]>([]);
-  const [redoStack, setRedoStack] = useState<any[]>([]);
+  const [lines, setLines] = useState<LineData[]>([]);
+  const [redoStack, setRedoStack] = useState<LineData[]>([]);
   const [imageStack, setImageStack] = useState<(string | null)[]>([]);
   const [imageSrc, setImageSrc] = useState<string | null>(null);
 
@@ -63,15 +64,16 @@ const Main: React.FC<MainProps> = ({ roomId, socket }) => {
   const undo = () => {
     if (lines.length > 0 || imageSrc) {
       const lastLine = lines.pop();
-      if (lastLine) setRedoStack([...redoStack, lastLine]);
+      if (lastLine) setRedoStack((prev) => [...prev, lastLine]);
 
       const lastImage = imageSrc ? imageSrc : imageStack.pop();
-      if (lastImage) setImageStack([...imageStack, lastImage]);
+      if (lastImage) setImageStack((prev) => [...prev, lastImage]);
 
       setLines([...lines]);
       setImageSrc(
         imageStack.length > 0 ? imageStack[imageStack.length - 1] : null
       );
+
       socket?.emit("undo", {
         roomId,
         lines,
@@ -85,7 +87,7 @@ const Main: React.FC<MainProps> = ({ roomId, socket }) => {
     const lastImageRedo = imageStack.pop();
 
     if (lastRedo || lastImageRedo) {
-      if (lastRedo) setLines([...lines, lastRedo]);
+      if (lastRedo) setLines((prev) => [...prev, lastRedo]);
       if (lastImageRedo) setImageSrc(lastImageRedo);
 
       setRedoStack([...redoStack]);
@@ -99,9 +101,10 @@ const Main: React.FC<MainProps> = ({ roomId, socket }) => {
     if (file) {
       const reader = new FileReader();
       reader.onload = () => {
-        setImageSrc(reader.result as string);
-        setImageStack([...imageStack, reader.result as string]); // Push image to stack
-        socket?.emit("addImage", { roomId, image: reader.result });
+        const result = reader.result as string;
+        setImageSrc(result);
+        setImageStack((prev) => [...prev, result]); // Push image to stack
+        socket?.emit("addImage", { roomId, image: result });
       };
       reader.readAsDataURL(file);
     }

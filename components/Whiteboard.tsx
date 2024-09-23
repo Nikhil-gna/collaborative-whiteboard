@@ -8,17 +8,9 @@ import {
   Text,
 } from "react-konva";
 import { useTheme } from "next-themes";
-import useImage from "use-image";
+import { LineData, Point } from "@/types/types";
 import { Socket } from "socket.io-client";
 import Konva from "konva";
-
-interface Point {
-  x: number;
-  y: number;
-  tool: string;
-  color: string;
-  lineWidth: number;
-}
 
 interface Cursor {
   x: number;
@@ -27,15 +19,11 @@ interface Cursor {
   name: string;
 }
 
-interface LineData {
-  points: Point[];
-}
-
 interface WhiteboardCanvasProps {
   tool: string;
   color: string;
   lineWidth: number;
-  imageSrc: string | null;
+  imageSrc: string | null; // Not used in the current implementation, consider removing if not needed
   lines: LineData[];
   setLines: React.Dispatch<React.SetStateAction<LineData[]>>;
   socket: Socket | null;
@@ -46,7 +34,6 @@ const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
   tool,
   color,
   lineWidth,
-  imageSrc,
   lines,
   setLines,
   socket,
@@ -80,11 +67,16 @@ const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
       setCurrentLine((prev) => [...prev, { ...point, tool, color, lineWidth }]);
     }
   };
-
   const handleMouseUp = () => {
     if (currentLine.length > 0) {
-      setLines((prev) => [...prev, { points: currentLine }]);
-      socket?.emit("drawing", { roomId, line: { points: currentLine } });
+      const newLine: LineData = {
+        points: currentLine,
+        color: color, // Pass the current color
+        lineWidth: lineWidth, // Pass the current line width
+      };
+
+      setLines((prev) => [...prev, newLine]);
+      socket?.emit("drawing", { roomId, line: newLine });
       setCurrentLine([]);
     }
     isDrawing.current = false;
@@ -152,7 +144,9 @@ const WhiteboardCanvas: React.FC<WhiteboardCanvasProps> = ({
       socket.off("mouseUpdate");
     };
   }, [socket, setLines]);
+
   const { theme } = useTheme();
+
   return (
     <Stage
       width={window.innerWidth}
