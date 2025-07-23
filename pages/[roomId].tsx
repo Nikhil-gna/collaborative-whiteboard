@@ -25,7 +25,7 @@ const Room: React.FC = () => {
     if (typeof roomId === "string" && typeof name === "string") {
       try {
         socketRef.current = io(
-          "https://collaborative-whiteboard-du8v.onrender.com"
+          "https://collaborative-board-su6r.onrender.com"
         );
         const socket = socketRef.current;
 
@@ -77,11 +77,10 @@ const Room: React.FC = () => {
         <div
           className={`absolute top-24 right-10 bg-gray-100 dark:bg-gray-900 p-4 rounded-lg shadow-md border border-gray-200
                      transition-all duration-300 ease-in-out 
-                     ${
-                       showUsers
-                         ? "opacity-100"
-                         : "opacity-0 pointer-events-none"
-                     }`}
+                     ${showUsers
+              ? "opacity-100"
+              : "opacity-0 pointer-events-none"
+            }`}
         >
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
